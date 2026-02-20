@@ -2,7 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../src/common/prisma.service';
 import { HealthController } from '../src/health/health.controller';
-import request = require('supertest');
+import request from 'supertest';
 
 describe('HealthController (e2e)', () => {
   let app: INestApplication;
