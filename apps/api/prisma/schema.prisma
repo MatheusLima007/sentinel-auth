@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum AuditEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAIL
+  REFRESH
+  LOGOUT
+  LOGOUT_ALL
+  REFRESH_REUSE_DETECTED
+}
+
+model User {
+  id           String           @id @default(uuid()) @db.Uuid
+  name         String
+  email        String           @unique
+  passwordHash String           @map("password_hash")
+  status       UserStatus       @default(ACTIVE)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  userRoles    UserRole[]
+  sessions     RefreshSession[]
+  auditEvents  AuditEvent[]
+
+  @@map("users")
+}
+
+model App {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String           @unique
+  createdAt   DateTime         @default(now()) @map("created_at")
+  roles       Role[]
+  permissions Permission[]
+  sessions    RefreshSession[]
+  auditEvents AuditEvent[]
+
+  @@map("apps")
+}
+
+model Role {
+  id              String           @id @default(uuid()) @db.Uuid
+  appId           String           @map("app_id") @db.Uuid
+  name            String
+  createdAt       DateTime         @default(now()) @map("created_at")
+  app             App              @relation(fields: [appId], references: [id], onDelete: Cascade)
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([appId, name])
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid()) @db.Uuid
+  appId           String           @map("app_id") @db.Uuid
+  key             String
+  createdAt       DateTime         @default(now()) @map("created_at")
+  app             App              @relation(fields: [appId], references: [id], onDelete: Cascade)
+  rolePermissions RolePermission[]
+
+  @@unique([appId, key])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId String @map("user_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RefreshSession {
+  id         String    @id @default(uuid()) @db.Uuid
+  family     String    @default(uuid())
+  userId     String    @map("user_id") @db.Uuid
+  appId      String    @map("app_id") @db.Uuid
+  tokenHash  String    @map("token_hash")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+  userAgent  String?   @map("user_agent")
+  ip         String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app        App       @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([family])
+  @@index([userId, appId])
+  @@map("refresh_sessions")
+}
+
+model AuditEvent {
+  id            String         @id @default(uuid()) @db.Uuid
+  type          AuditEventType
+  userId        String?        @map("user_id") @db.Uuid
+  appId         String?        @map("app_id") @db.Uuid
+  ip            String?
+  userAgent     String?        @map("user_agent")
+  correlationId String?        @map("correlation_id")
+  metadata      Json?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  app           App?           @relation(fields: [appId], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([userId, appId])
+  @@map("audit_events")
+}
