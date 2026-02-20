@@ -130,5 +130,6 @@ model AuditEvent {
 
   @@index([type])
   @@index([userId, appId])
+  @@index([createdAt])
   @@map("audit_events")
 }
