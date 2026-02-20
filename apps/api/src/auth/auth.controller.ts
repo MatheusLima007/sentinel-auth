@@ -8,6 +8,14 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { AuthenticatedRequest } from '../common/authenticated-request.type';
@@ -15,10 +23,15 @@ import { LoginDto } from './dto/login.dto';
 import { LogoutAllDto } from './dto/logout-all.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Autenticar usuário e emitir access/refresh tokens' })
+  @ApiBody({ type: LoginDto })
+  @ApiOkResponse({ description: 'Login efetuado com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Credenciais inválidas' })
   @Post('login')
   @HttpCode(200)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
@@ -26,6 +39,10 @@ export class AuthController {
     return this.authService.login(dto, this.extractMeta(req));
   }
 
+  @ApiOperation({ summary: 'Rotacionar refresh token e emitir novo access token' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Token rotacionado com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Refresh token inválido ou expirado' })
   @Post('refresh')
   @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
@@ -37,6 +54,10 @@ export class AuthController {
     return this.authService.refresh(refreshToken, this.extractMeta(req));
   }
 
+  @ApiOperation({ summary: 'Revogar sessão atual com refresh token' })
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Logout executado com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Refresh token inválido' })
   @Post('logout')
   @HttpCode(200)
   logout(
@@ -47,6 +68,11 @@ export class AuthController {
     return this.authService.logout(refreshToken, this.extractMeta(req));
   }
 
+  @ApiOperation({ summary: 'Revogar todas as sessões do usuário em um app' })
+  @ApiBearerAuth()
+  @ApiBody({ type: LogoutAllDto })
+  @ApiOkResponse({ description: 'Sessões revogadas com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Contexto de usuário inválido' })
   @Post('logout-all')
   @UseGuards(JwtAuthGuard)
   @HttpCode(200)
