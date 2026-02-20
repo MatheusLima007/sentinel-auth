@@ -13,13 +13,13 @@ const bcrypt = jest.requireMock('bcryptjs') as {
 
 describe('AuthService', () => {
   const prismaMock = {
+    $transaction: jest.fn(),
     app: { findUnique: jest.fn() },
     user: { findUnique: jest.fn() },
     userRole: { findMany: jest.fn() },
     refreshSession: {
       create: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn(),
       updateMany: jest.fn(),
     },
   };
@@ -45,6 +45,9 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => unknown) =>
+      callback(prismaMock),
+    );
     service = new AuthService(
       prismaMock as never,
       tokenServiceMock as never,
@@ -153,8 +156,12 @@ describe('AuthService', () => {
 
     const result = await service.refresh('refresh-old', meta);
 
-    expect(prismaMock.refreshSession.update).toHaveBeenCalledWith({
-      where: { id: 'session-old' },
+    expect(prismaMock.refreshSession.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'session-old',
+        revokedAt: null,
+        tokenHash: 'hash-old',
+      },
       data: { revokedAt: expect.any(Date) },
     });
     expect(prismaMock.refreshSession.create).toHaveBeenCalled();

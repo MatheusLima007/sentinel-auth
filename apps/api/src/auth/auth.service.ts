@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { AuditEventType, UserStatus } from '@prisma/client';
+import { AuditEventType, Prisma, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
@@ -102,63 +102,104 @@ export class AuthService {
     const claims = await this.tokenService.verifyRefreshToken(refreshToken);
     const tokenHash = this.tokenService.hashToken(refreshToken);
 
-    const currentSession = await this.prisma.refreshSession.findUnique({
-      where: { id: claims.sessionId },
-    });
+    let refreshContext: {
+      user: { id: string; email: string };
+      permissions: string[];
+      previousSessionId: string;
+    };
 
-    if (!currentSession) {
-      throw new UnauthorizedException({
-        code: 'REFRESH_SESSION_NOT_FOUND',
-        message: 'Sessão de refresh inválida',
+    try {
+      refreshContext = await this.prisma.$transaction(async (transaction) => {
+        const currentSession = await transaction.refreshSession.findUnique({
+          where: { id: claims.sessionId },
+        });
+
+        if (!currentSession) {
+          throw new UnauthorizedException({
+            code: 'REFRESH_SESSION_NOT_FOUND',
+            message: 'Sessão de refresh inválida',
+          });
+        }
+
+        const reused = currentSession.revokedAt !== null || currentSession.tokenHash !== tokenHash;
+
+        if (reused) {
+          await transaction.refreshSession.updateMany({
+            where: { family: claims.family, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+
+          throw new UnauthorizedException({
+            code: 'REFRESH_REUSE_DETECTED',
+            message: 'Refresh token reutilizado',
+          });
+        }
+
+        if (currentSession.expiresAt.getTime() <= Date.now()) {
+          throw new UnauthorizedException({
+            code: 'REFRESH_EXPIRED',
+            message: 'Refresh token expirado',
+          });
+        }
+
+        const revoked = await transaction.refreshSession.updateMany({
+          where: {
+            id: currentSession.id,
+            revokedAt: null,
+            tokenHash,
+          },
+          data: { revokedAt: new Date() },
+        });
+
+        if (revoked.count === 0) {
+          await transaction.refreshSession.updateMany({
+            where: { family: claims.family, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+
+          throw new UnauthorizedException({
+            code: 'REFRESH_REUSE_DETECTED',
+            message: 'Refresh token reutilizado',
+          });
+        }
+
+        const user = await transaction.user.findUnique({ where: { id: claims.sub } });
+
+        if (!user) {
+          throw new UnauthorizedException('Usuário não encontrado');
+        }
+
+        const permissions = await this.getPermissionsForUserInApp(user.id, claims.appId, transaction);
+
+        return {
+          user: {
+            id: user.id,
+            email: user.email,
+          },
+          permissions,
+          previousSessionId: currentSession.id,
+        };
       });
+    } catch (error) {
+      const code = this.getExceptionCode(error);
+
+      if (code === 'REFRESH_REUSE_DETECTED') {
+        await this.auditService.log({
+          type: AuditEventType.REFRESH_REUSE_DETECTED,
+          userId: claims.sub,
+          appId: claims.appId,
+          ip: meta.ip,
+          userAgent: meta.userAgent,
+          correlationId: meta.correlationId,
+          metadata: { sessionId: claims.sessionId, family: claims.family },
+        });
+      }
+
+      throw error;
     }
-
-    const reused = currentSession.revokedAt !== null || currentSession.tokenHash !== tokenHash;
-
-    if (reused) {
-      await this.prisma.refreshSession.updateMany({
-        where: { family: claims.family, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-
-      await this.auditService.log({
-        type: AuditEventType.REFRESH_REUSE_DETECTED,
-        userId: claims.sub,
-        appId: claims.appId,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
-        correlationId: meta.correlationId,
-        metadata: { sessionId: claims.sessionId, family: claims.family },
-      });
-
-      throw new UnauthorizedException({
-        code: 'REFRESH_REUSE_DETECTED',
-        message: 'Refresh token reutilizado',
-      });
-    }
-
-    if (currentSession.expiresAt.getTime() <= Date.now()) {
-      throw new UnauthorizedException({
-        code: 'REFRESH_EXPIRED',
-        message: 'Refresh token expirado',
-      });
-    }
-
-    await this.prisma.refreshSession.update({
-      where: { id: currentSession.id },
-      data: { revokedAt: new Date() },
-    });
-
-    const user = await this.prisma.user.findUnique({ where: { id: claims.sub } });
-
-    if (!user) {
-      throw new UnauthorizedException('Usuário não encontrado');
-    }
-
-    const permissions = await this.getPermissionsForUserInApp(user.id, claims.appId);
 
     const newRefreshToken = await this.tokenService.generateRefreshToken({
-      sub: user.id,
+      sub: refreshContext.user.id,
       appId: claims.appId,
       family: claims.family,
       sessionId: randomUUID(),
@@ -170,7 +211,7 @@ export class AuthService {
       data: {
         id: newRefreshClaims.sessionId,
         family: claims.family,
-        userId: user.id,
+        userId: refreshContext.user.id,
         appId: claims.appId,
         tokenHash: this.tokenService.hashToken(newRefreshToken),
         expiresAt: new Date((newRefreshClaims.exp || 0) * 1000),
@@ -180,20 +221,23 @@ export class AuthService {
     });
 
     const accessToken = await this.tokenService.generateAccessToken({
-      sub: user.id,
-      email: user.email,
+      sub: refreshContext.user.id,
+      email: refreshContext.user.email,
       appId: claims.appId,
-      permissions,
+      permissions: refreshContext.permissions,
     });
 
     await this.auditService.log({
       type: AuditEventType.REFRESH,
-      userId: user.id,
+      userId: refreshContext.user.id,
       appId: claims.appId,
       ip: meta.ip,
       userAgent: meta.userAgent,
       correlationId: meta.correlationId,
-      metadata: { previousSessionId: claims.sessionId, newSessionId: newRefreshClaims.sessionId },
+      metadata: {
+        previousSessionId: refreshContext.previousSessionId,
+        newSessionId: newRefreshClaims.sessionId,
+      },
     });
 
     return {
@@ -251,8 +295,12 @@ export class AuthService {
     return { success: true };
   }
 
-  private async getPermissionsForUserInApp(userId: string, appId: string) {
-    const roles = await this.prisma.userRole.findMany({
+  private async getPermissionsForUserInApp(
+    userId: string,
+    appId: string,
+    prismaClient: PrismaService | Prisma.TransactionClient = this.prisma,
+  ) {
+    const roles = await prismaClient.userRole.findMany({
       where: {
         userId,
         role: {
@@ -281,5 +329,21 @@ export class AuthService {
     }
 
     return Array.from(uniquePermissions);
+  }
+
+  private getExceptionCode(error: unknown) {
+    if (!(error instanceof UnauthorizedException)) {
+      return undefined;
+    }
+
+    const response = error.getResponse();
+
+    if (!response || typeof response !== 'object') {
+      return undefined;
+    }
+
+    const responseCode = (response as { code?: unknown }).code;
+
+    return typeof responseCode === 'string' ? responseCode : undefined;
   }
 }
