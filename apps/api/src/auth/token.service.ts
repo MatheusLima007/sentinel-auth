@@ -61,7 +61,10 @@ export class TokenService {
     this.assertStringClaim(claims.email, 'email');
     this.assertStringClaim(claims.appId, 'appId');
 
-    if (!Array.isArray(claims.permissions) || claims.permissions.some((permission) => typeof permission !== 'string')) {
+    if (
+      !Array.isArray(claims.permissions) ||
+      claims.permissions.some((permission) => typeof permission !== 'string')
+    ) {
       throw new UnauthorizedException({
         code: 'INVALID_TOKEN_CLAIMS',
         message: 'Claims de access token inválidas',

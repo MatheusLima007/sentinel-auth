@@ -156,6 +156,10 @@ Copie `apps/api/.env.example` para `apps/api/.env` e ajuste se necessário:
 cp apps/api/.env.example apps/api/.env
 ```
 
+Configuração importante:
+
+- `CORS_ALLOWED_ORIGINS`: lista separada por vírgula com origins permitidos (web/Expo)
+
 ### 3) Instalar dependências e migrar DB
 
 ```bash
@@ -177,14 +181,22 @@ API em: `http://localhost:3000`
 Web demo (Next.js):
 
 ```bash
+cp apps/web-demo/.env.example apps/web-demo/.env.local
 npm run dev --workspace apps/web-demo
 ```
 
 Mobile demo (Expo):
 
 ```bash
+cp apps/mobile-demo/.env.example apps/mobile-demo/.env
 npm run dev --workspace apps/mobile-demo
 ```
+
+Observação Expo (API URL):
+
+- iOS simulator: `http://localhost:3000`
+- Android emulator: `http://10.0.2.2:3000`
+- dispositivo físico: use o IP da máquina host
 
 ---
 
