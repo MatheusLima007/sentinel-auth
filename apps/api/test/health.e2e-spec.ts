@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import request from 'supertest';
 import { PrismaService } from '../src/common/prisma.service';
 import { HealthController } from '../src/health/health.controller';
-import request from 'supertest';
 
 describe('HealthController (e2e)', () => {
   let app: INestApplication;
