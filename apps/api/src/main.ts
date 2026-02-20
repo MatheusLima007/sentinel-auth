@@ -9,11 +9,7 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.enableCors({
-    origin: [
-      'http://localhost:3001',
-      'http://localhost:8081',
-      'http://localhost:19006',
-    ],
+    origin: ['http://localhost:3001', 'http://localhost:8081', 'http://localhost:19006'],
     credentials: true,
   });
   app.use(helmet());

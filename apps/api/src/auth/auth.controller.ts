@@ -37,14 +37,20 @@ export class AuthController {
   @Post('refresh')
   @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  refresh(@Headers('authorization') authorization: string | undefined, @Req() req: AuthenticatedRequest) {
+  refresh(
+    @Headers('authorization') authorization: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const refreshToken = this.extractBearerToken(authorization);
     return this.authService.refresh(refreshToken, this.extractMeta(req));
   }
 
   @Post('logout')
   @HttpCode(200)
-  logout(@Headers('authorization') authorization: string | undefined, @Req() req: AuthenticatedRequest) {
+  logout(
+    @Headers('authorization') authorization: string | undefined,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const refreshToken = this.extractBearerToken(authorization);
     return this.authService.logout(refreshToken, this.extractMeta(req));
   }

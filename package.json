@@ -10,9 +10,16 @@
     "dev": "npm run dev --workspace apps/api",
     "dev:web": "npm run dev --workspace apps/web-demo",
     "dev:mobile": "npm run dev --workspace apps/mobile-demo",
+    "lint": "npm run lint --workspace apps/api",
+    "lint:fix": "npm run lint:fix --workspace apps/api",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "build": "npm run build --workspace apps/api",
     "db:migrate": "npm run db:migrate --workspace apps/api",
     "db:seed": "npm run db:seed --workspace apps/api"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   },
   "engines": {
     "node": ">=20"
