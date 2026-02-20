@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Sentinel Auth Mobile Demo",
+    "slug": "sentinel-auth-mobile-demo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"]
+  }
+}
