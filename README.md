@@ -173,6 +173,12 @@ npm run db:migrate
 npm run db:seed
 ```
 
+Limpeza de auditoria (opcional):
+
+```bash
+npm run db:audit:cleanup --workspace apps/api -- 90
+```
+
 ### 4) Rodar API
 
 ```bash
