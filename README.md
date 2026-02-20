@@ -134,10 +134,10 @@ docker compose up -d
 ```
 
 ### 2) Configurar env
-Copie `.env.example` para `.env` e ajuste se necessário:
+Copie `apps/api/.env.example` para `apps/api/.env` e ajuste se necessário:
 
 ```bash
-cp .env.example .env
+cp apps/api/.env.example apps/api/.env
 ```
 
 ### 3) Instalar dependências e migrar DB
@@ -149,10 +149,24 @@ npm run db:seed
 
 ### 4) Rodar API
 ```bash
-npm run dev
+npm run dev --workspace apps/api
 ```
 
 API em: `http://localhost:3000`
+
+### 5) Rodar demos (opcional)
+
+Web demo (Next.js):
+
+```bash
+npm run dev --workspace apps/web-demo
+```
+
+Mobile demo (Expo):
+
+```bash
+npm run dev --workspace apps/mobile-demo
+```
 
 ---
 
@@ -205,13 +219,13 @@ Resposta (exemplo):
 ## Roadmap
 
 ### MVP
-- [ ] auth (login/refresh/logout/logout-all)
-- [ ] RBAC por app (roles/perms)
-- [ ] audit events
-- [ ] rate limit
-- [ ] docker compose (postgres + redis)
-- [ ] seed com app demo + role + user
-- [ ] demo web (Next.js) e demo mobile (Expo) consumindo API
+- [x] auth (login/refresh/logout/logout-all)
+- [x] RBAC por app (roles/perms)
+- [x] audit events
+- [x] rate limit
+- [x] docker compose (postgres + redis)
+- [x] seed com app demo + role + user
+- [x] demo web (Next.js) e demo mobile (Expo) consumindo API
 
 ### Próximos passos
 - [ ] reset password
