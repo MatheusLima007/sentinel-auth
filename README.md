@@ -83,6 +83,26 @@ Serviço centralizado de **autenticação e autorização (RBAC)** para múltipl
   - Rate limiting em endpoints sensíveis
   - Headers via helmet
 
+### Diagrama de arquitetura
+
+```mermaid
+flowchart LR
+  Web[Web Demo\nNext.js] --> API[Sentinel Auth API\nNestJS]
+  Mobile[Mobile Demo\nExpo] --> API
+
+  API --> Redis[(Redis\nRate limit)]
+  API --> DB[(PostgreSQL\nPrisma)]
+
+  API --> Auth[Auth Module\nLogin/Refresh/Logout]
+  API --> Rbac[RBAC Module\nRoles/Permissions]
+  API --> Sessions[Sessions Module\nList/Revoke]
+  API --> Audit[Audit Module\nSecurity Events]
+
+  Auth --> Tokens[JWT\nAccess + Refresh Rotation]
+  Auth --> SessionsTable[(refresh_sessions)]
+  Audit --> AuditTable[(audit_events)]
+```
+
 ---
 
 ## Funcionalidades (MVP)
