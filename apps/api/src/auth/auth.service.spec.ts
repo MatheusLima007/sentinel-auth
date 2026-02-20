@@ -45,8 +45,8 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => unknown) =>
-      callback(prismaMock),
+    prismaMock.$transaction.mockImplementation(
+      async (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock),
     );
     service = new AuthService(
       prismaMock as never,

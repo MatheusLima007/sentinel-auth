@@ -10,10 +10,10 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
+import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LogoutAllDto } from './dto/logout-all.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { AuthService } from './auth.service';
 
 type AuthenticatedRequest = Request & {
   user?: {

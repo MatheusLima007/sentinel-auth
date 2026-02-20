@@ -11,7 +11,10 @@ async function bootstrap() {
 
   const trustProxy = process.env.TRUST_PROXY;
   if (trustProxy) {
-    app.getHttpAdapter().getInstance().set('trust proxy', trustProxy === 'true' ? 1 : trustProxy);
+    app
+      .getHttpAdapter()
+      .getInstance()
+      .set('trust proxy', trustProxy === 'true' ? 1 : trustProxy);
   }
 
   const corsOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')

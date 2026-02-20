@@ -169,7 +169,11 @@ export class AuthService {
           throw new UnauthorizedException('Usuário não encontrado');
         }
 
-        const permissions = await this.getPermissionsForUserInApp(user.id, claims.appId, transaction);
+        const permissions = await this.getPermissionsForUserInApp(
+          user.id,
+          claims.appId,
+          transaction,
+        );
 
         return {
           user: {
