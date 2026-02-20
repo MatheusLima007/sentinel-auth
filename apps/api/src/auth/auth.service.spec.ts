@@ -48,6 +48,7 @@ describe('AuthService', () => {
     prismaMock.$transaction.mockImplementation(
       async (callback: (tx: typeof prismaMock) => unknown) => callback(prismaMock),
     );
+    prismaMock.refreshSession.updateMany.mockResolvedValue({ count: 1 });
     service = new AuthService(
       prismaMock as never,
       tokenServiceMock as never,
