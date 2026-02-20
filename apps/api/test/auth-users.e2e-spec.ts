@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
+import { HttpExceptionFilter } from '../src/common/http-exception.filter';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { PermissionsGuard } from '../src/rbac/permissions.guard';
 import { UsersController } from '../src/users/users.controller';
@@ -55,6 +56,7 @@ describe('Auth + Users (e2e)', () => {
     const moduleFixture: TestingModule = await moduleFixtureBuilder.compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 
@@ -118,6 +120,18 @@ describe('Auth + Users (e2e)', () => {
       expect.objectContaining({
         appId: 'app-1',
         permissions: ['user.read'],
+      }),
+    );
+  });
+
+  it('/auth/refresh (POST) deve retornar erro padronizado sem bearer token', async () => {
+    const response = await request(app.getHttpServer()).post('/auth/refresh').expect(401);
+
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        statusCode: 401,
+        code: 'UNAUTHORIZED',
+        message: 'Authorization bearer token não informado',
       }),
     );
   });
