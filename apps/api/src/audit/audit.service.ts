@@ -1,5 +1,5 @@
-import { AuditEventType, Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
+import { AuditEventType, Prisma } from '@prisma/client';
 import { PrismaService } from '../common/prisma.service';
 
 export interface CreateAuditEventInput {

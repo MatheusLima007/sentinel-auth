@@ -1,5 +1,5 @@
-import { AuditEventType, UserStatus } from '@prisma/client';
 import { UnauthorizedException } from '@nestjs/common';
+import { AuditEventType, UserStatus } from '@prisma/client';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 

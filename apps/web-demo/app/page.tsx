@@ -1,7 +1,7 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
 import { LoginResponse } from '@sentinel-auth/shared';
+import { FormEvent, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 

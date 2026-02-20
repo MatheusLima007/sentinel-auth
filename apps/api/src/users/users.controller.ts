@@ -1,6 +1,6 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
-import { PrismaService } from '../common/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PrismaService } from '../common/prisma.service';
 import { RequirePermissions } from '../rbac/permissions.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
 

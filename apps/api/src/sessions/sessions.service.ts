@@ -1,8 +1,8 @@
-import { AuditEventType } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AuditEventType } from '@prisma/client';
 import { AuditService } from '../audit/audit.service';
-import { PrismaService } from '../common/prisma.service';
 import { RequestMeta } from '../auth/types';
+import { PrismaService } from '../common/prisma.service';
 
 @Injectable()
 export class SessionsService {
