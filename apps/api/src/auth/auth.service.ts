@@ -1,12 +1,14 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuditEventType, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../common/prisma.service';
 import { LoginDto } from './dto/login.dto';
-import { RequestMeta } from './types';
 import { TokenService } from './token.service';
+import { RequestMeta } from './types';
+
+const DUMMY_PASSWORD_HASH = '$2b$10$KYVbZ5JFVfqu0oV98LnF5eTk4QTe2e4PQG7QNYfhumEpGdi/867AO';
 
 @Injectable()
 export class AuthService {
@@ -18,43 +20,28 @@ export class AuthService {
 
   async login(input: LoginDto, meta: RequestMeta) {
     const app = await this.prisma.app.findUnique({ where: { slug: input.appId } });
-
-    if (!app) {
-      await this.auditService.log({
-        type: AuditEventType.LOGIN_FAIL,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
-        correlationId: meta.correlationId,
-        metadata: { reason: 'app_not_found', email: input.email, appSlug: input.appId },
-      });
-      throw new NotFoundException('App não encontrada');
-    }
-
     const user = await this.prisma.user.findUnique({ where: { email: input.email } });
 
-    if (!user || user.status !== UserStatus.ACTIVE) {
+    const passwordHash = user?.passwordHash || DUMMY_PASSWORD_HASH;
+    const passwordValid = await bcrypt.compare(input.password, passwordHash);
+
+    if (!app || !user || user.status !== UserStatus.ACTIVE || !passwordValid) {
+      const reason = !app
+        ? 'app_not_found'
+        : !user
+          ? 'user_not_found'
+          : user.status !== UserStatus.ACTIVE
+            ? 'user_not_active'
+            : 'password_mismatch';
+
       await this.auditService.log({
         type: AuditEventType.LOGIN_FAIL,
-        appId: app.id,
+        appId: app?.id,
+        userId: user?.id,
         ip: meta.ip,
         userAgent: meta.userAgent,
         correlationId: meta.correlationId,
-        metadata: { reason: 'user_not_active', email: input.email },
-      });
-      throw new UnauthorizedException('Credenciais inválidas');
-    }
-
-    const passwordValid = await bcrypt.compare(input.password, user.passwordHash);
-
-    if (!passwordValid) {
-      await this.auditService.log({
-        type: AuditEventType.LOGIN_FAIL,
-        appId: app.id,
-        userId: user.id,
-        ip: meta.ip,
-        userAgent: meta.userAgent,
-        correlationId: meta.correlationId,
-        metadata: { reason: 'password_mismatch' },
+        metadata: { reason, email: input.email, appSlug: input.appId },
       });
       throw new UnauthorizedException('Credenciais inválidas');
     }
