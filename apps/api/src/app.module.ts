@@ -1,11 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import Redis from 'ioredis';
 import { LoggerModule } from 'nestjs-pino';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
+import { AppThrottlerGuard } from './common/app-throttler.guard';
 import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
 import { PrismaModule } from './common/prisma.module';
 import { RedisThrottlerStorage } from './common/redis-throttler.storage';
@@ -89,7 +90,7 @@ const closeThrottlerRedisClient = async () => {
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
   ],
 })
