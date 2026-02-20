@@ -1,22 +1,11 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestMeta } from '../auth/types';
+import { AuthenticatedRequest } from '../common/authenticated-request.type';
 import { RequirePermissions } from '../rbac/permissions.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
 import { RevokeSessionDto } from './dto/revoke-session.dto';
 import { SessionsService } from './sessions.service';
-
-type RequestWithUser = {
-  user?: {
-    sub: string;
-    appId: string;
-  };
-  ip?: string;
-  headers: {
-    'user-agent'?: string;
-  };
-  correlationId?: string;
-};
 
 @Controller('sessions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -25,13 +14,13 @@ export class SessionsController {
 
   @Get()
   @RequirePermissions('sessions.read')
-  list(@Req() req: RequestWithUser) {
+  list(@Req() req: AuthenticatedRequest) {
     return this.sessionsService.listUserSessions(req.user!.sub, req.user!.appId);
   }
 
   @Post('revoke')
   @RequirePermissions('sessions.revoke')
-  revoke(@Body() dto: RevokeSessionDto, @Req() req: RequestWithUser) {
+  revoke(@Body() dto: RevokeSessionDto, @Req() req: AuthenticatedRequest) {
     return this.sessionsService.revokeSession(
       req.user!.sub,
       req.user!.appId,
@@ -40,7 +29,7 @@ export class SessionsController {
     );
   }
 
-  private extractMeta(req: RequestWithUser): RequestMeta {
+  private extractMeta(req: AuthenticatedRequest): RequestMeta {
     return {
       ip: req.ip,
       userAgent: req.headers['user-agent'],

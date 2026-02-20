@@ -9,19 +9,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { AuthenticatedRequest } from '../common/authenticated-request.type';
 import { LoginDto } from './dto/login.dto';
 import { LogoutAllDto } from './dto/logout-all.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-
-type AuthenticatedRequest = Request & {
-  user?: {
-    sub: string;
-    appId: string;
-  };
-  correlationId?: string;
-};
 
 @Controller('auth')
 export class AuthController {
