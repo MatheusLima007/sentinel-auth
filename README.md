@@ -251,6 +251,10 @@ Resposta (exemplo):
 
 `GET /readiness`
 
+### Documentação OpenAPI (Swagger)
+
+`GET /docs`
+
 ### Listar sessões (RBAC)
 
 `GET /sessions`

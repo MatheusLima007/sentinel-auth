@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 
@@ -41,6 +42,22 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  if (process.env.SWAGGER_ENABLED !== 'false') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Sentinel Auth API')
+      .setDescription('Serviço centralizado de autenticação e autorização')
+      .setVersion('0.1.0')
+      .addBearerAuth()
+      .build();
+
+    const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, swaggerDocument, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
+  }
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   await app.listen(port);
