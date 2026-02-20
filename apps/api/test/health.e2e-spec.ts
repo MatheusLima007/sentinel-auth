@@ -1,8 +1,8 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import request = require('supertest');
-import { HealthController } from '../src/health/health.controller';
 import { PrismaService } from '../src/common/prisma.service';
+import { HealthController } from '../src/health/health.controller';
+import request = require('supertest');
 
 describe('HealthController (e2e)', () => {
   let app: INestApplication;
@@ -27,9 +27,7 @@ describe('HealthController (e2e)', () => {
   });
 
   it('/health (GET) deve retornar status ok', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/health')
-      .expect(200);
+    const response = await request(app.getHttpServer()).get('/health').expect(200);
 
     expect(response.body).toEqual(
       expect.objectContaining({
@@ -41,9 +39,7 @@ describe('HealthController (e2e)', () => {
   it('/readiness (GET) deve retornar ready quando banco responde', async () => {
     prismaMock.$queryRawUnsafe.mockResolvedValueOnce([{ '?column?': 1 }]);
 
-    const response = await request(app.getHttpServer())
-      .get('/readiness')
-      .expect(200);
+    const response = await request(app.getHttpServer()).get('/readiness').expect(200);
 
     expect(response.body).toEqual(
       expect.objectContaining({
@@ -55,9 +51,7 @@ describe('HealthController (e2e)', () => {
   it('/readiness (GET) deve retornar 503 quando dependência falha', async () => {
     prismaMock.$queryRawUnsafe.mockRejectedValueOnce(new Error('db down'));
 
-    const response = await request(app.getHttpServer())
-      .get('/readiness')
-      .expect(503);
+    const response = await request(app.getHttpServer()).get('/readiness').expect(503);
 
     expect(response.body.message).toEqual('Dependências indisponíveis');
   });
