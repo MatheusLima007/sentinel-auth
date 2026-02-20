@@ -176,7 +176,11 @@ describe('AuthService', () => {
       expiresAt: new Date(Date.now() + 300_000),
     });
 
-    await expect(service.refresh('refresh-reused', meta)).rejects.toThrow(UnauthorizedException);
+    await expect(service.refresh('refresh-reused', meta)).rejects.toMatchObject({
+      response: {
+        code: 'REFRESH_REUSE_DETECTED',
+      },
+    });
 
     expect(prismaMock.refreshSession.updateMany).toHaveBeenCalledWith({
       where: { family: 'family-1', revokedAt: null },
@@ -186,5 +190,59 @@ describe('AuthService', () => {
     expect(auditServiceMock.log).toHaveBeenCalledWith(
       expect.objectContaining({ type: AuditEventType.REFRESH_REUSE_DETECTED }),
     );
+  });
+
+  it('refresh deve retornar erro quando sessão não existe', async () => {
+    tokenServiceMock.verifyRefreshToken.mockResolvedValue({
+      sessionId: 'missing-session',
+      sub: 'user-1',
+      appId: 'app-1',
+      family: 'family-1',
+    });
+    tokenServiceMock.hashToken.mockReturnValue('hash-missing');
+    prismaMock.refreshSession.findUnique.mockResolvedValue(null);
+
+    await expect(service.refresh('refresh-missing', meta)).rejects.toMatchObject({
+      response: {
+        code: 'REFRESH_SESSION_NOT_FOUND',
+      },
+    });
+  });
+
+  it('refresh deve retornar erro quando sessão expira', async () => {
+    tokenServiceMock.verifyRefreshToken.mockResolvedValue({
+      sessionId: 'session-expired',
+      sub: 'user-1',
+      appId: 'app-1',
+      family: 'family-1',
+    });
+    tokenServiceMock.hashToken.mockReturnValue('hash-expired');
+    prismaMock.refreshSession.findUnique.mockResolvedValue({
+      id: 'session-expired',
+      tokenHash: 'hash-expired',
+      revokedAt: null,
+      expiresAt: new Date(Date.now() - 10_000),
+    });
+
+    await expect(service.refresh('refresh-expired', meta)).rejects.toMatchObject({
+      response: {
+        code: 'REFRESH_EXPIRED',
+      },
+    });
+  });
+
+  it('refresh deve propagar erro de type inválido no token', async () => {
+    tokenServiceMock.verifyRefreshToken.mockRejectedValue(
+      new UnauthorizedException({
+        code: 'INVALID_TOKEN_TYPE',
+        message: 'Refresh token inválido',
+      }),
+    );
+
+    await expect(service.refresh('not-a-refresh-token', meta)).rejects.toMatchObject({
+      response: {
+        code: 'INVALID_TOKEN_TYPE',
+      },
+    });
   });
 });
