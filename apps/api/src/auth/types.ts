@@ -4,6 +4,8 @@ export interface AccessTokenClaims {
   appId: string;
   permissions: string[];
   type: 'access';
+  iat?: number;
+  exp?: number;
 }
 
 export interface RefreshTokenClaims {
