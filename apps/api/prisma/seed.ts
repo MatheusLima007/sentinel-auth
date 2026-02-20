@@ -47,6 +47,34 @@ async function main() {
     },
   });
 
+  const webSessionsReadPermission = await prisma.permission.upsert({
+    where: {
+      appId_key: {
+        appId: demoWeb.id,
+        key: 'sessions.read',
+      },
+    },
+    update: {},
+    create: {
+      appId: demoWeb.id,
+      key: 'sessions.read',
+    },
+  });
+
+  const webSessionsRevokePermission = await prisma.permission.upsert({
+    where: {
+      appId_key: {
+        appId: demoWeb.id,
+        key: 'sessions.revoke',
+      },
+    },
+    update: {},
+    create: {
+      appId: demoWeb.id,
+      key: 'sessions.revoke',
+    },
+  });
+
   const mobilePermission = await prisma.permission.upsert({
     where: {
       appId_key: {
@@ -58,6 +86,34 @@ async function main() {
     create: {
       appId: demoMobile.id,
       key: 'user.read',
+    },
+  });
+
+  const mobileSessionsReadPermission = await prisma.permission.upsert({
+    where: {
+      appId_key: {
+        appId: demoMobile.id,
+        key: 'sessions.read',
+      },
+    },
+    update: {},
+    create: {
+      appId: demoMobile.id,
+      key: 'sessions.read',
+    },
+  });
+
+  const mobileSessionsRevokePermission = await prisma.permission.upsert({
+    where: {
+      appId_key: {
+        appId: demoMobile.id,
+        key: 'sessions.revoke',
+      },
+    },
+    update: {},
+    create: {
+      appId: demoMobile.id,
+      key: 'sessions.revoke',
     },
   });
 
@@ -106,6 +162,34 @@ async function main() {
   await prisma.rolePermission.upsert({
     where: {
       roleId_permissionId: {
+        roleId: webRole.id,
+        permissionId: webSessionsReadPermission.id,
+      },
+    },
+    update: {},
+    create: {
+      roleId: webRole.id,
+      permissionId: webSessionsReadPermission.id,
+    },
+  });
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: webRole.id,
+        permissionId: webSessionsRevokePermission.id,
+      },
+    },
+    update: {},
+    create: {
+      roleId: webRole.id,
+      permissionId: webSessionsRevokePermission.id,
+    },
+  });
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
         roleId: mobileRole.id,
         permissionId: mobilePermission.id,
       },
@@ -114,6 +198,34 @@ async function main() {
     create: {
       roleId: mobileRole.id,
       permissionId: mobilePermission.id,
+    },
+  });
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: mobileRole.id,
+        permissionId: mobileSessionsReadPermission.id,
+      },
+    },
+    update: {},
+    create: {
+      roleId: mobileRole.id,
+      permissionId: mobileSessionsReadPermission.id,
+    },
+  });
+
+  await prisma.rolePermission.upsert({
+    where: {
+      roleId_permissionId: {
+        roleId: mobileRole.id,
+        permissionId: mobileSessionsRevokePermission.id,
+      },
+    },
+    update: {},
+    create: {
+      roleId: mobileRole.id,
+      permissionId: mobileSessionsRevokePermission.id,
     },
   });
 

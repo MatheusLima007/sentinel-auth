@@ -98,6 +98,10 @@ Serviço centralizado de **autenticação e autorização (RBAC)** para múltipl
 
 - Permissões por aplicação (`appId`)
 - Decorator/guard para rotas: `@RequirePermissions('orders.read')`
+- Endpoints protegidos por RBAC:
+  - `GET /me` requer `user.read`
+  - `GET /sessions` requer `sessions.read`
+  - `POST /sessions/revoke` requer `sessions.revoke`
 
 ### Auditoria
 
@@ -237,6 +241,24 @@ Resposta (exemplo):
 `POST /auth/logout`
 
 `Authorization: Bearer <refreshToken>`
+
+### Listar sessões (RBAC)
+
+`GET /sessions`
+
+`Authorization: Bearer <accessToken>`
+
+### Revogar sessão específica (RBAC)
+
+`POST /sessions/revoke`
+
+`Authorization: Bearer <accessToken>`
+
+```json
+{
+  "sessionId": "uuid-da-sessao"
+}
+```
 
 ---
 

@@ -10,6 +10,7 @@ import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
 import { PrismaModule } from './common/prisma.module';
 import { RedisThrottlerStorage } from './common/redis-throttler.storage';
 import { RbacModule } from './rbac/rbac.module';
+import { SessionsModule } from './sessions/sessions.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -58,6 +59,7 @@ import { UsersModule } from './users/users.module';
     AuditModule,
     AuthModule,
     RbacModule,
+    SessionsModule,
     UsersModule,
   ],
   providers: [
