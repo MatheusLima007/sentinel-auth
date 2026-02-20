@@ -163,6 +163,7 @@ cp apps/api/.env.example apps/api/.env
 Configuração importante:
 
 - `CORS_ALLOWED_ORIGINS`: lista separada por vírgula com origins permitidos (web/Expo)
+- `TRUST_PROXY`: habilite quando a API rodar atrás de proxy/load balancer
 
 ### 3) Instalar dependências e migrar DB
 
@@ -241,6 +242,14 @@ Resposta (exemplo):
 `POST /auth/logout`
 
 `Authorization: Bearer <refreshToken>`
+
+### Health check
+
+`GET /health`
+
+### Readiness check (dependências)
+
+`GET /readiness`
 
 ### Listar sessões (RBAC)
 
