@@ -1,8 +1,8 @@
 import { Controller, Get, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PrismaService } from '../common/prisma.service';
 import { RequirePermissions } from '../rbac/permissions.decorator';
 import { PermissionsGuard } from '../rbac/permissions.guard';
+import { UsersService } from './users.service';
 
 type RequestWithUser = {
   user?: {
@@ -15,28 +15,16 @@ type RequestWithUser = {
 
 @Controller()
 export class UsersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('user.read')
   async me(@Req() req: RequestWithUser) {
-    const userId = req.user?.sub;
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        status: true,
-      },
-    });
-
-    return {
-      user,
+    return this.usersService.getMe({
+      userId: req.user?.sub,
       appId: req.user?.appId,
-      permissions: req.user?.permissions || [],
-    };
+      permissions: req.user?.permissions,
+    });
   }
 }
