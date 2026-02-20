@@ -32,6 +32,9 @@ import { UsersModule } from './users/users.module';
             correlationId: req.headers['x-correlation-id'],
           }),
         },
+        ...(process.env.NODE_ENV !== 'production'
+          ? { transport: { target: 'pino-pretty', options: { colorize: true } } }
+          : {}),
       },
     }),
     ThrottlerModule.forRootAsync({
