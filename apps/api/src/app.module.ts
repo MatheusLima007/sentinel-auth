@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { CorrelationIdMiddleware } from './common/correlation-id.middleware';
 import { PrismaModule } from './common/prisma.module';
 import { RedisThrottlerStorage } from './common/redis-throttler.storage';
+import { HealthModule } from './health/health.module';
 import { RbacModule } from './rbac/rbac.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { UsersModule } from './users/users.module';
@@ -58,6 +59,7 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     AuditModule,
     AuthModule,
+    HealthModule,
     RbacModule,
     SessionsModule,
     UsersModule,
