@@ -17,8 +17,8 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
 import { AuthenticatedRequest } from '../common/authenticated-request.type';
+import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { LogoutAllDto } from './dto/logout-all.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
