@@ -71,7 +71,7 @@ Serviço centralizado de **autenticação e autorização (RBAC)** para múltipl
 ### Padrões e decisões
 
 - DTO + validation em todas entradas (class-validator)
-- Repository layer via Prisma (serviços não acoplam em queries)
+- Service layer por domínio com acesso ao banco via Prisma
 - Guards para autenticação e autorização
 - Auditoria sempre que:
   - login success/fail
