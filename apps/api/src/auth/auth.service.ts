@@ -1,9 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { AuditEventType, Prisma, UserStatus } from '@prisma/client';
+import { AuditEventType, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../common/prisma.service';
+import { RbacService } from '../rbac/rbac.service';
 import { LoginDto } from './dto/login.dto';
 import { TokenService } from './token.service';
 import { RequestMeta } from './types';
@@ -16,6 +17,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
     private readonly auditService: AuditService,
+    private readonly rbacService: RbacService,
   ) {}
 
   async login(input: LoginDto, meta: RequestMeta) {
@@ -46,7 +48,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const permissions = await this.getPermissionsForUserInApp(user.id, app.id);
+    const permissions = await this.rbacService.getPermissionsForUserInApp(user.id, app.id);
 
     const family = randomUUID();
     const refreshToken = await this.tokenService.generateRefreshToken({
@@ -169,7 +171,7 @@ export class AuthService {
           throw new UnauthorizedException('Usuário não encontrado');
         }
 
-        const permissions = await this.getPermissionsForUserInApp(
+        const permissions = await this.rbacService.getPermissionsForUserInApp(
           user.id,
           claims.appId,
           transaction,
@@ -297,42 +299,6 @@ export class AuthService {
     });
 
     return { success: true };
-  }
-
-  private async getPermissionsForUserInApp(
-    userId: string,
-    appId: string,
-    prismaClient: PrismaService | Prisma.TransactionClient = this.prisma,
-  ) {
-    const roles = await prismaClient.userRole.findMany({
-      where: {
-        userId,
-        role: {
-          appId,
-        },
-      },
-      include: {
-        role: {
-          include: {
-            rolePermissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const uniquePermissions = new Set<string>();
-
-    for (const userRole of roles) {
-      for (const rolePermission of userRole.role.rolePermissions) {
-        uniquePermissions.add(rolePermission.permission.key);
-      }
-    }
-
-    return Array.from(uniquePermissions);
   }
 
   private getExceptionCode(error: unknown) {

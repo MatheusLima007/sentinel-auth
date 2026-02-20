@@ -31,6 +31,10 @@ describe('AuthService', () => {
     hashToken: jest.fn(),
   };
 
+  const rbacServiceMock = {
+    getPermissionsForUserInApp: jest.fn(),
+  };
+
   const auditServiceMock = {
     log: jest.fn(),
   };
@@ -53,6 +57,7 @@ describe('AuthService', () => {
       prismaMock as never,
       tokenServiceMock as never,
       auditServiceMock as never,
+      rbacServiceMock as never,
     );
   });
 
@@ -72,16 +77,7 @@ describe('AuthService', () => {
       passwordHash: 'hash',
     });
     bcrypt.compare.mockResolvedValue(true);
-    prismaMock.userRole.findMany.mockResolvedValue([
-      {
-        role: {
-          rolePermissions: [
-            { permission: { key: 'user.read' } },
-            { permission: { key: 'orders.read' } },
-          ],
-        },
-      },
-    ]);
+    rbacServiceMock.getPermissionsForUserInApp.mockResolvedValue(['user.read', 'orders.read']);
 
     tokenServiceMock.generateRefreshToken.mockResolvedValue('refresh-token');
     tokenServiceMock.verifyRefreshToken.mockResolvedValue({
@@ -130,13 +126,7 @@ describe('AuthService', () => {
       name: 'Demo',
     });
 
-    prismaMock.userRole.findMany.mockResolvedValue([
-      {
-        role: {
-          rolePermissions: [{ permission: { key: 'user.read' } }],
-        },
-      },
-    ]);
+    rbacServiceMock.getPermissionsForUserInApp.mockResolvedValue(['user.read']);
 
     tokenServiceMock.generateRefreshToken.mockResolvedValue('refresh-new');
     tokenServiceMock.verifyRefreshToken.mockResolvedValueOnce({
