@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ThrottlerStorage } from '@nestjs/throttler';
 import Redis from 'ioredis';
 
@@ -10,7 +10,7 @@ interface StorageRecord {
 }
 
 @Injectable()
-export class RedisThrottlerStorage implements ThrottlerStorage, OnApplicationShutdown {
+export class RedisThrottlerStorage implements ThrottlerStorage {
   constructor(private readonly redis: Redis) {}
 
   async increment(
@@ -55,11 +55,5 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnApplicationShu
       isBlocked,
       timeToBlockExpire,
     };
-  }
-
-  async onApplicationShutdown() {
-    if (this.redis.status !== 'end') {
-      await this.redis.quit();
-    }
   }
 }

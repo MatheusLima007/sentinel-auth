@@ -14,6 +14,15 @@ import { RbacModule } from './rbac/rbac.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { UsersModule } from './users/users.module';
 
+let throttlerRedisClient: Redis | null = null;
+let throttlerShutdownRegistered = false;
+
+const closeThrottlerRedisClient = async () => {
+  if (throttlerRedisClient && throttlerRedisClient.status !== 'end') {
+    await throttlerRedisClient.quit();
+  }
+};
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,7 +51,20 @@ import { UsersModule } from './users/users.module';
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const redis = new Redis(configService.getOrThrow<string>('REDIS_URL'));
+        if (!throttlerRedisClient) {
+          throttlerRedisClient = new Redis(configService.getOrThrow<string>('REDIS_URL'));
+        }
+
+        if (!throttlerShutdownRegistered) {
+          process.once('SIGINT', () => {
+            void closeThrottlerRedisClient();
+          });
+          process.once('SIGTERM', () => {
+            void closeThrottlerRedisClient();
+          });
+
+          throttlerShutdownRegistered = true;
+        }
 
         return {
           throttlers: [
@@ -52,7 +74,7 @@ import { UsersModule } from './users/users.module';
               blockDuration: 60_000,
             },
           ],
-          storage: new RedisThrottlerStorage(redis),
+          storage: new RedisThrottlerStorage(throttlerRedisClient),
         };
       },
     }),
